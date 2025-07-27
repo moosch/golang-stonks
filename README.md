@@ -106,6 +106,10 @@ go build -o backtest cmd/main.go
 - `-trade-fee`: Trade fee percentage (default: 0.001 = 0.1%)
 - `-slippage`: Slippage percentage (default: 0.001 = 0.1%)
 
+### Visualization
+- `-charts`: Generate HTML charts for visualization (default: false)
+- `-chart-output`: Directory to save chart files (default: "charts")
+
 ## CSV Data Format
 
 The application expects CSV files with the following format:
@@ -163,6 +167,41 @@ Run the unit tests for the indicators:
 ```bash
 go test ./pkg/indicators/...
 ```
+
+## Interactive Visualization
+
+The system can generate interactive HTML charts using the go-echarts library. Use the `-charts` flag to enable visualization:
+
+```bash
+./backtest -data historic_data/historic_AAPL.csv -capital 10000 -charts
+```
+
+This generates two types of charts:
+
+### 📈 Price Chart (K-Line/Candlestick)
+- **Interactive candlestick chart** showing OHLC (Open, High, Low, Close) data
+- **Trade markers** indicating entry and exit points
+- **Zoom and pan** functionality for detailed analysis
+- **Hover tooltips** with detailed price information
+
+### 💰 Account Balance Chart
+- **Line chart** showing account balance over time
+- **Trade impact visualization** showing how each trade affects the balance
+- **Performance tracking** with clear profit/loss progression
+- **Interactive timeline** with zoom capabilities
+
+### Chart Features
+- **Responsive design** that works on desktop and mobile
+- **Professional styling** with clean, modern appearance
+- **Export capabilities** built into the charts
+- **No internet required** - all assets are embedded
+
+### Chart Output
+Charts are saved as HTML files in the specified output directory (default: `charts/`):
+- `{SYMBOL}_price_chart.html` - Candlestick chart with trade markers
+- `{SYMBOL}_balance_chart.html` - Account balance over time
+
+Simply open these files in any web browser to view the interactive charts.
 
 ## Available Data Files
 

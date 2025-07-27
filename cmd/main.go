@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"swing-trader/internal/types"
 	"swing-trader/pkg/backtesting"
 	"swing-trader/pkg/data"
+	"swing-trader/pkg/visualization"
 	"time"
 )
 
@@ -29,6 +31,8 @@ func main() {
 		rsiPeriod      = flag.Int("rsi-period", 14, "RSI calculation period")
 		bbPeriod       = flag.Int("bb-period", 20, "Bollinger Bands calculation period")
 		bbStdDev       = flag.Float64("bb-stddev", 2.0, "Bollinger Bands standard deviation multiplier")
+		generateCharts = flag.Bool("charts", false, "Generate HTML charts for visualization")
+		chartOutput    = flag.String("chart-output", "charts", "Directory to save chart files")
 	)
 	flag.Parse()
 
@@ -115,6 +119,11 @@ func main() {
 
 	// Display results
 	printResults(result)
+
+	// Generate charts if requested
+	if *generateCharts {
+		generateVisualizationCharts(stockData, result, *chartOutput, *dataPath)
+	}
 }
 
 // printResults displays the backtest results in a formatted way
@@ -183,4 +192,56 @@ func printResults(result *types.BacktestResult) {
 	}
 	
 	fmt.Println(separator)
+}
+
+// generateVisualizationCharts creates HTML charts for the backtest results
+func generateVisualizationCharts(stockData []types.StockData, result *types.BacktestResult, outputDir, dataPath string) {
+	// Create output directory if it doesn't exist
+	err := os.MkdirAll(outputDir, 0755)
+	if err != nil {
+		log.Printf("Failed to create chart output directory: %v", err)
+		return
+	}
+
+	// Extract stock symbol from data path for chart titles
+	stockSymbol := extractStockSymbol(dataPath)
+
+	fmt.Println("\nGenerating visualization charts...")
+
+	// Generate K-Line chart with trade markers
+	klineFile := fmt.Sprintf("%s/%s_price_chart.html", outputDir, stockSymbol)
+	err = visualization.GenerateKLineChartWithTrades(stockData, result.Trades, stockSymbol, klineFile)
+	if err != nil {
+		log.Printf("Failed to generate K-Line chart: %v", err)
+	} else {
+		fmt.Printf("✓ Generated price chart: %s\n", klineFile)
+	}
+
+	// Generate account balance chart
+	balanceFile := fmt.Sprintf("%s/%s_balance_chart.html", outputDir, stockSymbol)
+	err = visualization.GenerateAccountBalanceChart(stockData, result.Trades, result.InitialCapital, stockSymbol, balanceFile)
+	if err != nil {
+		log.Printf("Failed to generate balance chart: %v", err)
+	} else {
+		fmt.Printf("✓ Generated balance chart: %s\n", balanceFile)
+	}
+
+	fmt.Println("\nVisualization charts generated successfully!")
+	fmt.Printf("Open the HTML files in your browser to view the interactive charts.\n")
+}
+
+// extractStockSymbol extracts the stock symbol from the file path
+func extractStockSymbol(dataPath string) string {
+	// Extract filename from path
+	parts := strings.Split(dataPath, "/")
+	filename := parts[len(parts)-1]
+	
+	// Remove .csv extension and historic_ prefix if present
+	name := strings.TrimSuffix(filename, ".csv")
+	name = strings.TrimPrefix(name, "historic_")
+	
+	if name == "" {
+		return "STOCK"
+	}
+	return strings.ToUpper(name)
 }
